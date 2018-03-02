@@ -58,10 +58,14 @@ protected:
 	/** Handler for when a touch input stops. */
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
 
+
 protected:
 	// APawn interface
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// End of APawn interface
+
+	/** Call the InGameMenu. */
+	void InGameMenu();
 
 public:
 	/** Returns CameraBoom subobject **/

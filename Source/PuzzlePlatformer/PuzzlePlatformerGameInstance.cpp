@@ -6,6 +6,7 @@
 #include "UObject/ConstructorHelpers.h"
 #include "Blueprint/UserWidget.h"
 #include "MenuSystem/MainMenu.h"
+#include "MenuSystem/MenuWidget.h"
 
 
 UPuzzlePlatformerGameInstance::UPuzzlePlatformerGameInstance(const FObjectInitializer & ObjectInitializer)
@@ -15,6 +16,10 @@ UPuzzlePlatformerGameInstance::UPuzzlePlatformerGameInstance(const FObjectInitia
 	ConstructorHelpers::FClassFinder<UUserWidget> MenuBPClass(TEXT("/Game/MenuSystem/WBP_MainMenu"));
 	if (!ensure(MenuBPClass.Class != nullptr)) return;
 	MenuClass = MenuBPClass.Class;
+
+	ConstructorHelpers::FClassFinder<UUserWidget> InGameMenuBPClass(TEXT("/Game/MenuSystem/WBP_InGameMenu"));
+	if (!ensure(InGameMenuBPClass.Class != nullptr)) return;
+	InGameMenuClass = InGameMenuBPClass.Class;
 }
 
 void UPuzzlePlatformerGameInstance::Init() {
@@ -23,27 +28,33 @@ void UPuzzlePlatformerGameInstance::Init() {
 }
 
 void UPuzzlePlatformerGameInstance::LoadMenu() {
-	if (!ensure(MenuClass != nullptr)) return;
-	UMainMenu * Menu = CreateWidget<UMainMenu>(this, MenuClass);
-	if (!ensure(Menu != nullptr)) return;
-	Menu->AddToViewport();
-	Menu->SetMenuInterface(this);
-	
+
 	APlayerController* PlayerController = GetFirstLocalPlayerController();
 	if (!ensure(PlayerController != nullptr)) return;
 
-	FInputModeUIOnly InputModeData;
-	InputModeData.SetWidgetToFocus(Menu->TakeWidget());
-	InputModeData.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+	if (UMainMenu* Menu = CreateWidget<UMainMenu>(PlayerController, MenuClass)) {
+		Menu->AddToPlayerScreen();
+		Menu->SetMenuInterface(this);
+	}
+}
 
-	PlayerController->SetInputMode(InputModeData);
-	PlayerController->bShowMouseCursor = true;
+void UPuzzlePlatformerGameInstance::LoadInGameMenu() { 
+	if (!ensure(InGameMenuClass != nullptr)) return;
 
-
+	APlayerController* PlayerController = GetFirstLocalPlayerController();
+	if (!ensure(PlayerController != nullptr)) return;
+	
+	if (UMenuWidget* Menu = CreateWidget<UMenuWidget>(PlayerController, InGameMenuClass)) {
+		Menu->AddToPlayerScreen();
+		Menu->SetMenuInterface(this);
+	}
 }
 
 
 void UPuzzlePlatformerGameInstance::Host() {
+
+	if (Menu != nullptr) Menu->RemoveFromViewport();
+
 	UEngine * Engine = GetEngine();
 	if (!ensure(Engine != nullptr)) return;
 	Engine->AddOnScreenDebugMessage(-1, 2, FColor::Green, TEXT("Hosting"));
