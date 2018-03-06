@@ -2,11 +2,21 @@
 
 #include "MainMenu.h"
 
+#include "UObject/ConstructorHelpers.h"
+
 #include "Components/Button.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/EditableTextBox.h"
+#include "Components/TextBlock.h"
+#include "ServerRow.h"
 
 
+UMainMenu::UMainMenu(const FObjectInitializer & ObjectInitializer) : Super(ObjectInitializer) {
+
+	ConstructorHelpers::FClassFinder<UUserWidget> ServerRowBPClass(TEXT("/Game/MenuSystem/WBP_ServerRow"));
+	if (!ensure(ServerRowBPClass.Class != nullptr)) return;
+	ServerRowClass = ServerRowBPClass.Class;
+}
 
 bool UMainMenu::Initialize() {
 	bool Success = Super::Initialize();
@@ -28,7 +38,7 @@ bool UMainMenu::Initialize() {
 	QuitButton->OnClicked.AddDynamic(this, &UMainMenu::QuitGame);
 
 	return true;
-	}
+}
 
 void UMainMenu::HostServer() {
 	if (MenuInterface != nullptr) {
@@ -37,17 +47,41 @@ void UMainMenu::HostServer() {
 }
 
 void UMainMenu::JoinServer() {
-	if (MenuInterface != nullptr) {
-		if (!ensure(IpTextBox != nullptr)) return;
-		const FString& Address = IpTextBox->GetText().ToString();
-		MenuInterface->Join(Address);
+	if (SelectedIndex.IsSet() && MenuInterface != nullptr) {
+		UE_LOG(LogTemp, Warning, TEXT("Selected index %d."), SelectedIndex.GetValue());
+		MenuInterface->Join(SelectedIndex.GetValue());
+	} else {
+		UE_LOG(LogTemp, Warning, TEXT("Selected index not set."));
 	}
 }
+
+void UMainMenu::SetServerList(TArray<FString> ServerNames) {
+	UWorld* World = this->GetWorld();
+	if (!ensure(World != nullptr)) return;
+
+	ServerList->ClearChildren();
+
+	uint32 i = 0;
+	for (const FString& ServerName : ServerNames) {
+		UServerRow* Row = CreateWidget<UServerRow>(World, ServerRowClass);
+		if (!ensure(Row != nullptr)) return;
+
+		Row->ServerName->SetText(FText::FromString(ServerName));
+		Row->Setup(this, i);
+		++i;
+
+		ServerList->AddChild(Row);
+	}
+}
+
 
 void UMainMenu::OpenJoinMenu() {
 	if (!ensure(MenuSwitcher != nullptr)) return;
 	if (!ensure(JoinMenu != nullptr)) return;
 	MenuSwitcher->SetActiveWidget(JoinMenu);
+	if (MenuInterface != nullptr) {
+		MenuInterface->RefreshServerList();
+	}
 }
 
 void UMainMenu::OpenMainMenu() {
@@ -70,4 +104,8 @@ void UMainMenu::QuitGame() {
 	//APlayerController* PlayerController = World->GetFirstPlayerController();
 	//if (!ensure(PlayerController))return;
 	//UKismetSystemLibrary::QuitGame(World, PlayerController, EQuitPreference::Quit);
+}
+
+void UMainMenu::SelectIndex(uint32 Index) {
+	SelectedIndex = Index;
 }
