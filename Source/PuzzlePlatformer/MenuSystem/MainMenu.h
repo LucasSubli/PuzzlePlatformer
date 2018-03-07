@@ -6,6 +6,16 @@
 #include "MenuWidget.h"
 #include "MainMenu.generated.h"
 
+USTRUCT()
+struct FServerData {
+	GENERATED_BODY()
+
+	FString Name;
+	uint16 CurrentPlayers;
+	uint16 MaxPlayers;
+	FString HostUsername;
+};
+
 /**
  * 
  */
@@ -17,7 +27,7 @@ class PUZZLEPLATFORMER_API UMainMenu : public UMenuWidget
 public: 
 	UMainMenu(const FObjectInitializer & ObjectInitializer);
 
-	void SetServerList(TArray<FString> ServerNames);
+	void SetServerList(TArray<FServerData> ServerNames);
 
 	void SelectIndex(uint32 Index);
 
@@ -54,8 +64,21 @@ private:
 	class UWidget* JoinMenu;
 
 	UPROPERTY(meta = (BindWidget))
+	class UWidget* HostMenu;
+
+	UPROPERTY(meta = (BindWidget))
+	class UEditableTextBox* ServerHostName;
+	
+	UPROPERTY(meta = (BindWidget))
+	class UButton* CancelHostButton;
+
+	UPROPERTY(meta = (BindWidget))
+	class UButton* ConfirmHostButton;
+
+	UPROPERTY(meta = (BindWidget))
 	class UPanelWidget* ServerList;
 
+	void UpdateChildren();
 
 	UFUNCTION()
 	void HostServer();
@@ -68,6 +91,9 @@ private:
 
 	UFUNCTION()
 	void OpenJoinMenu();
+
+	UFUNCTION()
+	void OpenHostMenu();
 
 	UFUNCTION()
 	void OpenMainMenu();
