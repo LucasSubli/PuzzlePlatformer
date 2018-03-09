@@ -13,7 +13,7 @@
 #include "GameFramework/GameModeBase.h"
 
 
-const static FName SESSION_NAME = TEXT("My Session Game");
+const static FName SESSION_NAME = NAME_GameSession;
 const static FName SERVER_NAME_SETTINGS_KEY = TEXT("ServerName");
 
 
@@ -140,13 +140,19 @@ void UPuzzlePlatformerGameInstance::CreateSession() {
 		bool bIsLanMatch = (IOnlineSubsystem::Get()->GetSubsystemName() == NULL_SUBSYSTEM);
 		SessionSettings.bIsLANMatch = bIsLanMatch;
 		
-		SessionSettings.NumPublicConnections = 2;
+		SessionSettings.NumPublicConnections = 5;
 		SessionSettings.bShouldAdvertise = true;
 		// if true = LOBBY match else = SERVER Match
 		SessionSettings.bUsesPresence = true;
 		SessionSettings.Set(SERVER_NAME_SETTINGS_KEY, DesiredServerName, EOnlineDataAdvertisementType::ViaOnlineServiceAndPing);
 
 		SessionInterface->CreateSession(0, SESSION_NAME, SessionSettings);
+	}
+}
+
+void UPuzzlePlatformerGameInstance::StartSession() {
+	if (SessionInterface.IsValid()) {
+		SessionInterface->StartSession(SESSION_NAME);
 	}
 }
 
@@ -168,7 +174,7 @@ void UPuzzlePlatformerGameInstance::OnCreateSessionComplete(FName SessionName, b
 	UWorld* World = GetWorld();
 	if (!ensure(World != nullptr)) return;
 
-	World->ServerTravel("/Game/PuzzlePlatformer/Maps/Map1?listen");
+	World->ServerTravel("/Game/PuzzlePlatformer/Maps/Lobby?listen");
 }
 
 void UPuzzlePlatformerGameInstance::OnFindSessionsComplete(bool Success) {
